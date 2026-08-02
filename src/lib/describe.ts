@@ -8,7 +8,8 @@ export interface Line {
   tone: Tone;
 }
 
-const list = (names: string[]): string => {
+/** "Mara", "Mara and Idris", "Mara, Idris and Wen". */
+export const list = (names: string[]): string => {
   if (names.length === 0) return 'nobody';
   if (names.length === 1) return names[0];
   if (names.length === 2) return `${names[0]} and ${names[1]}`;

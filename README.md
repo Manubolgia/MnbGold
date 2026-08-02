@@ -123,7 +123,8 @@ npm run deploy
 `wrangler.toml` binds the `GameRoom` Durable Object and serves `dist/` as static assets, with
 the Worker handling `/api/*` and the SPA fallback for deep links like `/r/ABCD`.
 
-Durable Objects require a paid Workers plan.
+`GameRoom` is registered as a **SQLite-backed** Durable Object (`new_sqlite_classes`), so it
+runs on the Workers free plan.
 
 ## Installing on iPhone
 

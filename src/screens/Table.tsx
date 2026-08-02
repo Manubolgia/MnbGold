@@ -6,7 +6,7 @@ import { Explorers } from '../components/Explorers.js';
 import { DecideBar } from '../components/DecideBar.js';
 import { LogView } from '../components/LogView.js';
 import { Scores, totalScore } from '../components/Scores.js';
-import { headline } from '../lib/describe.js';
+import { headline, list } from '../lib/describe.js';
 
 interface Props {
   state: PublicState;
@@ -121,10 +121,11 @@ export function Table({ state, youId, lastEvent, struck, onDecide, onRematch, on
             </div>
             <p className="hint" style={{ marginBottom: 14 }}>
               {(() => {
+                if (state.players.length === 0) return 'Nobody made it out.';
                 const best = Math.max(...state.players.map(totalScore));
                 const champs = state.players.filter((p) => totalScore(p) === best);
                 if (champs.length === 1) return `${champs[0].name} walks away with ${best} gems.`;
-                return `${champs.map((c) => c.name).join(' and ')} tie on ${best} gems.`;
+                return `${list(champs.map((c) => c.name))} tie on ${best} gems.`;
               })()}
             </p>
             <Scores players={state.players} youId={youId} />
