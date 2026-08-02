@@ -1,0 +1,175 @@
+/*
+ * Design tokens.
+ *
+ * Two modes (light / dark) x three colour schemes. Every scheme defines the
+ * same three brand colours — main, secondary, accent — and the surfaces are
+ * tuned per mode so contrast holds up in both.
+ *
+ * House rules for this whole app: flat colour only (no gradients anywhere) and
+ * hard edges only (no border radius anywhere). Depth comes from flat offset
+ * shadows and stacked tones, never from blur or blending.
+ */
+
+:root {
+  /* Motion — shared so every transition feels like one system. */
+  --t-fast: 140ms;
+  --t-base: 260ms;
+  --t-slow: 460ms;
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Structure */
+  --line-w: 2px;
+  --shadow-hard: 6px 6px 0 var(--shadow-col);
+  --shadow-hard-sm: 3px 3px 0 var(--shadow-col);
+  --shadow-press: 2px 2px 0 var(--shadow-col);
+
+  --gutter: 16px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---------------------------------------------------------------- */
+/* Scheme: Temple — gold, jade, crimson                              */
+/* ---------------------------------------------------------------- */
+
+:root[data-scheme='temple'][data-mode='dark'] {
+  --main: #e3ae2e;
+  --main-deep: #a5761a;
+  --secondary: #2fb89a;
+  --secondary-deep: #1a7b66;
+  --accent: #e2452f;
+  --accent-deep: #9c2618;
+
+  --bg: #14110e;
+  --surface: #1e1a15;
+  --surface-2: #292319;
+  --ink: #f6efe2;
+  --ink-dim: #a99c86;
+  --line: #3a3125;
+  --shadow-col: #0a0806;
+  --on-main: #14110e;
+  --on-secondary: #06120f;
+  --on-accent: #fff4f1;
+}
+
+:root[data-scheme='temple'][data-mode='light'] {
+  --main: #b07d0c;
+  --main-deep: #7d5806;
+  --secondary: #17806a;
+  --secondary-deep: #0d5748;
+  --accent: #c62c17;
+  --accent-deep: #8c1c0d;
+
+  --bg: #f3ead9;
+  --surface: #fdf8ee;
+  --surface-2: #e9dcc3;
+  --ink: #1d1710;
+  --ink-dim: #6b5c45;
+  --line: #241d13;
+  --shadow-col: #241d13;
+  --on-main: #fdf8ee;
+  --on-secondary: #f2fbf8;
+  --on-accent: #fff4f1;
+}
+
+/* ---------------------------------------------------------------- */
+/* Scheme: Jungle — jade, amber, ember                               */
+/* ---------------------------------------------------------------- */
+
+:root[data-scheme='jungle'][data-mode='dark'] {
+  --main: #3ecf9c;
+  --main-deep: #1c8060;
+  --secondary: #ecb63c;
+  --secondary-deep: #a67a17;
+  --accent: #ef5a2b;
+  --accent-deep: #a13314;
+
+  --bg: #0c1512;
+  --surface: #132019;
+  --surface-2: #1c2d23;
+  --ink: #eaf6ef;
+  --ink-dim: #8fa89a;
+  --line: #263b2f;
+  --shadow-col: #050b08;
+  --on-main: #06170f;
+  --on-secondary: #1a1204;
+  --on-accent: #fff2ec;
+}
+
+:root[data-scheme='jungle'][data-mode='light'] {
+  --main: #11785a;
+  --main-deep: #0a5240;
+  --secondary: #a97a08;
+  --secondary-deep: #7a5704;
+  --accent: #c9411a;
+  --accent-deep: #8d2a0d;
+
+  --bg: #e6f0e7;
+  --surface: #f7fcf7;
+  --surface-2: #d2e3d4;
+  --ink: #0f1a14;
+  --ink-dim: #4f6357;
+  --line: #14231a;
+  --shadow-col: #14231a;
+  --on-main: #f7fcf7;
+  --on-secondary: #fffaf0;
+  --on-accent: #fff2ec;
+}
+
+/* ---------------------------------------------------------------- */
+/* Scheme: Obsidian — lapis, bone, molten                            */
+/* ---------------------------------------------------------------- */
+
+:root[data-scheme='obsidian'][data-mode='dark'] {
+  --main: #6f90f7;
+  --main-deep: #33509f;
+  --secondary: #d5dced;
+  --secondary-deep: #8d97ad;
+  --accent: #ff7a1a;
+  --accent-deep: #ad4a05;
+
+  --bg: #0d0f14;
+  --surface: #14171f;
+  --surface-2: #1e222d;
+  --ink: #eef1f8;
+  --ink-dim: #97a0b5;
+  --line: #2a3040;
+  --shadow-col: #05060a;
+  --on-main: #080b14;
+  --on-secondary: #0d0f14;
+  --on-accent: #180a01;
+}
+
+:root[data-scheme='obsidian'][data-mode='light'] {
+  --main: #2f4bbd;
+  --main-deep: #1e3183;
+  --secondary: #5b6478;
+  --secondary-deep: #3d4453;
+  --accent: #c85207;
+  --accent-deep: #8d3a04;
+
+  --bg: #e9ecf3;
+  --surface: #fbfcff;
+  --surface-2: #d5dae6;
+  --ink: #10131b;
+  --ink-dim: #545c6e;
+  --line: #161a24;
+  --shadow-col: #161a24;
+  --on-main: #fbfcff;
+  --on-secondary: #fbfcff;
+  --on-accent: #fff5ec;
+}
+
+/* Card faces keep a constant identity across schemes so the game stays
+   readable — only their surroundings re-tint. */
+:root {
+  --gem: #2fb89a;
+  --gem-lit: #7fe3cb;
+  --gem-shade: #1a7b66;
+  --gold: #e3ae2e;
+  --gold-deep: #a5761a;
+  --stone: #6d6152;
+  --stone-deep: #4a4137;
+  --blood: #c2301c;
+}

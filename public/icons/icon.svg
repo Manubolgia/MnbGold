@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" shape-rendering="crispEdges">
+  <!-- Flat, hard-edged temple idol. No gradients, no curves. -->
+  <rect width="512" height="512" fill="#14110E"/>
+
+  <!-- Angular sun rays, stepped like Incan stonework -->
+  <path d="M256 84 L286 128 L226 128 Z" fill="#8C5A16"/>
+  <path d="M150 118 L186 146 L156 168 Z" fill="#6E4512"/>
+  <path d="M362 118 L326 146 L356 168 Z" fill="#6E4512"/>
+
+  <!-- Stepped pyramid, lit face -->
+  <rect x="176" y="196" width="160" height="60" fill="#E3AE2E"/>
+  <rect x="136" y="256" width="240" height="62" fill="#E3AE2E"/>
+  <rect x="96"  y="318" width="320" height="62" fill="#E3AE2E"/>
+  <rect x="60"  y="380" width="392" height="66" fill="#E3AE2E"/>
+
+  <!-- Hard cast shadow on the left face (flat tone, no blending) -->
+  <rect x="176" y="196" width="30" height="60" fill="#A5761A"/>
+  <rect x="136" y="256" width="30" height="62" fill="#A5761A"/>
+  <rect x="96"  y="318" width="30" height="62" fill="#A5761A"/>
+  <rect x="60"  y="380" width="30" height="66" fill="#A5761A"/>
+
+  <!-- Stone joints -->
+  <rect x="176" y="252" width="160" height="4" fill="#14110E"/>
+  <rect x="136" y="314" width="240" height="4" fill="#14110E"/>
+  <rect x="96"  y="376" width="320" height="4" fill="#14110E"/>
+
+  <!-- Doorway into the dark -->
+  <rect x="212" y="272" width="88" height="174" fill="#14110E"/>
+  <rect x="212" y="272" width="88" height="10" fill="#A5761A"/>
+
+  <!-- The gem, angular facets in flat tones -->
+  <path d="M256 316 L296 356 L256 404 L216 356 Z" fill="#2FB89A"/>
+  <path d="M256 316 L296 356 L256 356 Z" fill="#7FE3CB"/>
+  <path d="M216 356 L256 356 L256 404 Z" fill="#1C8570"/>
+
+  <!-- Fret motif on the base -->
+  <rect x="86"  y="402" width="26" height="10" fill="#14110E"/>
+  <rect x="128" y="402" width="26" height="10" fill="#14110E"/>
+  <rect x="358" y="402" width="26" height="10" fill="#14110E"/>
+  <rect x="400" y="402" width="26" height="10" fill="#14110E"/>
+</svg>
