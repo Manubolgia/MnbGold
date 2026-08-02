@@ -1,0 +1,32 @@
+{
+  "name": "mnbgold",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Incan Gold — a 1:1 online replica, playable as an installable iPhone PWA, powered by Cloudflare Workers + Durable Objects.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "icons": "node scripts/generate-icons.mjs",
+    "worker:dev": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "typecheck": "tsc -b --force",
+    "test": "node scripts/run-tests.mjs"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240925.0",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.2",
+    "playwright": "^1.62.1",
+    "sharp": "^0.35.3",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.9",
+    "wrangler": "^3.80.0"
+  }
+}

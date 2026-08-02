@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no"
+    />
+    <title>Incan Gold</title>
+    <meta name="description" content="Incan Gold — press your luck deep inside the temple. Play online with up to 10 explorers." />
+
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#14110E" />
+
+    <!-- iOS standalone install -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Incan Gold" />
+    <link rel="apple-touch-icon" href="/icons/icon-180.png" />
+    <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png" />
+
+    <script>
+      // Apply the stored theme before first paint so nothing flashes or shifts.
+      (function () {
+        try {
+          var saved = JSON.parse(localStorage.getItem('mnbgold:theme') || '{}');
+          var root = document.documentElement;
+          var mode =
+            saved.mode === 'light' || saved.mode === 'dark'
+              ? saved.mode
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark';
+          root.dataset.mode = mode;
+          root.dataset.scheme = saved.scheme || 'temple';
+        } catch (e) {
+          document.documentElement.dataset.mode = 'dark';
+          document.documentElement.dataset.scheme = 'temple';
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
