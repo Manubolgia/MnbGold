@@ -1,7 +1,12 @@
 /**
  * Ten explorers. Flat planes, mitred corners, one hard shadow tone per figure —
  * each silhouette is distinct enough to tell apart at 24px on a phone.
+ *
+ * A PNG dropped into `public/sprites/explorers/` overrides the drawing for that
+ * seat; see `sprites.ts`.
  */
+import { SpriteOr } from './SpriteOr.js';
+import { avatarSprite } from './sprites.js';
 
 const CLOTH = [
   '#E3AE2E',
@@ -118,6 +123,15 @@ function Headgear({ i, cloth, shade }: { i: number; cloth: string; shade: string
 }
 
 export function Avatar({ index, className, title }: { index: number; className?: string; title?: string }) {
+  const i = ((index % AVATAR_COUNT) + AVATAR_COUNT) % AVATAR_COUNT;
+  return (
+    <SpriteOr src={avatarSprite(i)} alt={title ?? `Explorer ${i + 1}`} className={`avatar-sprite${className ? ` ${className}` : ''}`}>
+      <AvatarSvg index={i} className={className} title={title} />
+    </SpriteOr>
+  );
+}
+
+function AvatarSvg({ index, className, title }: { index: number; className?: string; title?: string }) {
   const i = ((index % AVATAR_COUNT) + AVATAR_COUNT) % AVATAR_COUNT;
   const cloth = CLOTH[i];
   const shade = CLOTH_SHADE[i];

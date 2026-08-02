@@ -3,6 +3,12 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  /**
+   * GitHub Pages serves the board from /<repo>/, the Worker serves it from the
+   * root. BASE_PATH is set to '/MnbGold/' by the Pages workflow and left unset
+   * everywhere else.
+   */
+  base: process.env.BASE_PATH ?? '/',
   build: {
     target: 'es2020',
     outDir: 'dist',

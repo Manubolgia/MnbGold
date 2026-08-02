@@ -26,15 +26,32 @@ function normaliseCode(raw: string): string | null {
   return code;
 }
 
+/**
+ * The board is served from GitHub Pages while the rooms live here, so the API
+ * is cross-origin. Room codes are the only secret and they travel in the URL,
+ * not in a cookie, so there is nothing for a wildcard origin to leak.
+ */
+const CORS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET,POST,OPTIONS',
+  'access-control-allow-headers': 'content-type',
+  'access-control-max-age': '86400',
+};
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+    headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...CORS },
   });
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+
+    // Preflight for the cross-origin board.
+    if (request.method === 'OPTIONS' && url.pathname.startsWith('/api/')) {
+      return new Response(null, { status: 204, headers: CORS });
+    }
 
     if (url.pathname === '/api/health') {
       return json({ ok: true });
@@ -59,9 +76,15 @@ export default {
       const stub = env.ROOMS.get(env.ROOMS.idFromName(code));
 
       if (match[2]) {
+        // A 101 upgrade must be returned untouched; the socket itself is not
+        // subject to CORS anyway.
         return stub.fetch(`https://room/ws`, request);
       }
-      return stub.fetch(`https://room/info`);
+
+      const info = await stub.fetch(`https://room/info`);
+      const withCors = new Response(info.body, info);
+      for (const [k, v] of Object.entries(CORS)) withCors.headers.set(k, v);
+      return withCors;
     }
 
     if (url.pathname.startsWith('/api/')) {

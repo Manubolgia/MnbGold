@@ -77,6 +77,32 @@ p {
   height: 100%;
 }
 
+/* Custom sprites stand in for the SVG art and must fill the same box. */
+.sprite {
+  display: block;
+  width: 100%;
+  /* Card slots set only a width, so the sprite has to carry the card ratio
+     itself — matching the 120 x 168 viewBox the SVG art is drawn in. */
+  aspect-ratio: 120 / 168;
+  object-fit: cover;
+}
+
+/* Raster sprites only: pixel art must not be smoothed when scaled up. Vector
+   sprites are left alone, since they resample cleanly at any size. */
+.sprite.is-raster {
+  image-rendering: pixelated;
+}
+
+/* Explorer portraits are square. Height is left to the caller's class (a seat
+   sets 40px, the picker fills its button) exactly as it is for the SVG. */
+.sprite.avatar-sprite {
+  aspect-ratio: 1 / 1;
+}
+
+.avatar-pick .sprite.avatar-sprite {
+  height: 100%;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

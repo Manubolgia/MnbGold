@@ -5,9 +5,16 @@
  * from cache forever. Navigations go to the network first (so a new deploy is
  * picked up immediately) and fall back to the cached shell when offline.
  * Anything under /api/ — including the game socket — is never cached.
+ *
+ * Paths are resolved against the worker's own scope, which is '/' on the Worker
+ * deploy and '/MnbGold/' on GitHub Pages.
  */
-const VERSION = 'mnbgold-v1';
-const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png', '/icons/icon.svg'];
+const VERSION = 'mnbgold-v2';
+const BASE = new URL('./', self.location).pathname;
+const SHELL = ['', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg'].map(
+  (p) => `${BASE}${p}`,
+);
+const INDEX = `${BASE}index.html`;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -33,17 +40,17 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/api/')) return;
+  if (url.pathname.startsWith(`${BASE}api/`) || url.pathname.startsWith("/api/")) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
         .then((response) => {
           const copy = response.clone();
-          caches.open(VERSION).then((cache) => cache.put('/index.html', copy));
+          caches.open(VERSION).then((cache) => cache.put(INDEX, copy));
           return response;
         })
-        .catch(() => caches.match('/index.html').then((hit) => hit ?? Response.error())),
+        .catch(() => caches.match(INDEX).then((hit) => hit ?? Response.error())),
     );
     return;
   }

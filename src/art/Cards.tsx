@@ -11,6 +11,8 @@
  */
 import type { ReactNode } from 'react';
 import type { HazardType, PathCard } from '../../shared/types.js';
+import { SpriteOr } from './SpriteOr.js';
+import { artifactSprite, cardBackSprite, hazardSprite, treasureSprite } from './sprites.js';
 
 const W = 120;
 const H = 168;
@@ -150,6 +152,14 @@ function Coin({ cx, cy, r }: { cx: number; cy: number; r: number }) {
 }
 
 export function TreasureCard({ value, className }: { value: number; className?: string }) {
+  return (
+    <SpriteOr src={treasureSprite(value)} alt={`Treasure worth ${value} gems`} className={className}>
+      <TreasureCardSvg value={value} className={className} />
+    </SpriteOr>
+  );
+}
+
+function TreasureCardSvg({ value, className }: { value: number; className?: string }) {
   return (
     <CardFrame
       base="#241C12"
@@ -537,6 +547,14 @@ const HAZARD_ART: Record<HazardType, () => ReactNode> = {
 };
 
 export function HazardCard({ hazard, className }: { hazard: HazardType; className?: string }) {
+  return (
+    <SpriteOr src={hazardSprite(hazard)} alt={`${HAZARD_NAME[hazard]} hazard`} className={className}>
+      <HazardCardSvg hazard={hazard} className={className} />
+    </SpriteOr>
+  );
+}
+
+function HazardCardSvg({ hazard, className }: { hazard: HazardType; className?: string }) {
   const Art = HAZARD_ART[hazard];
   return (
     <CardFrame
@@ -558,6 +576,14 @@ export function HazardCard({ hazard, className }: { hazard: HazardType; classNam
 /* ------------------------------------------------------------------ */
 
 export function ArtifactCard({ className }: { className?: string }) {
+  return (
+    <SpriteOr src={artifactSprite()} alt="Artifact" className={className}>
+      <ArtifactCardSvg className={className} />
+    </SpriteOr>
+  );
+}
+
+function ArtifactCardSvg({ className }: { className?: string }) {
   return (
     <CardFrame
       base="#1A1208"
@@ -641,6 +667,14 @@ export function ArtifactCard({ className }: { className?: string }) {
 /* ------------------------------------------------------------------ */
 
 export function CardBack({ className }: { className?: string }) {
+  return (
+    <SpriteOr src={cardBackSprite()} alt="Face-down card" className={className}>
+      <CardBackSvg className={className} />
+    </SpriteOr>
+  );
+}
+
+function CardBackSvg({ className }: { className?: string }) {
   return (
     <CardFrame
       base="#171310"

@@ -1,5 +1,9 @@
 node_modules/
 dist/
+
+# Sprite masters: ~50MB of traced vector art. `npm run sprites` rasterises them
+# into public/sprites/, and those PNGs are what the game ships and commits.
+assets-src/sprites/
 .wrangler/
 .dev.vars
 *.log

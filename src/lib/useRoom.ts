@@ -6,6 +6,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ClientMessage, LogEntry, PublicState, ServerMessage } from '../../shared/types.js';
+import { apiUrl, socketUrl } from './server.js';
 import { clearSession, loadSession, saveSession } from './storage.js';
 
 export type ConnState = 'idle' | 'connecting' | 'online' | 'reconnecting' | 'offline';
@@ -71,8 +72,7 @@ export function useRoom(): RoomApi {
     closedByUsRef.current = false;
     setConn(attemptRef.current === 0 ? 'connecting' : 'reconnecting');
 
-    const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const socket = new WebSocket(`${proto}//${location.host}/api/room/${wanted.code}/ws`);
+    const socket = new WebSocket(socketUrl(wanted.code));
     socketRef.current = socket;
 
     socket.addEventListener('open', () => {
@@ -171,7 +171,7 @@ export function useRoom(): RoomApi {
       setError(null);
       setConn('connecting');
       try {
-        const res = await fetch('/api/room', { method: 'POST' });
+        const res = await fetch(apiUrl('/api/room'), { method: 'POST' });
         if (!res.ok) throw new Error('Could not open a room.');
         const { code } = (await res.json()) as { code: string };
         // A brand-new room must not inherit an old seat token.
@@ -191,7 +191,7 @@ export function useRoom(): RoomApi {
       setError(null);
       setConn('connecting');
       try {
-        const res = await fetch(`/api/room/${encodeURIComponent(clean)}`);
+        const res = await fetch(apiUrl(`/api/room/${encodeURIComponent(clean)}`));
         if (!res.ok) {
           setConn('idle');
           setError('No expedition with that code. Check the letters and try again.');
@@ -214,7 +214,7 @@ export function useRoom(): RoomApi {
     setError(null);
     setConn('connecting');
     try {
-      const res = await fetch(`/api/room/${encodeURIComponent(saved.code)}`);
+      const res = await fetch(apiUrl(`/api/room/${encodeURIComponent(saved.code)}`));
       if (!res.ok) {
         clearSession();
         setSavedCode(null);
