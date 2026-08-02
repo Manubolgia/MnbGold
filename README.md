@@ -113,18 +113,83 @@ npm run typecheck
 npm run icons      # re-rasterise the app icons from assets-src/icon.svg
 ```
 
-## Deploying
+## Deploying to Cloudflare
+
+You need a Cloudflare account. Nothing else — no domain, no card, no paid plan.
 
 ```bash
-npx wrangler login
-npm run deploy
+npm install
+npx wrangler login    # opens a browser to authorise this machine
+npm run deploy        # type-checks, builds dist/, uploads the Worker + assets
 ```
 
-`wrangler.toml` binds the `GameRoom` Durable Object and serves `dist/` as static assets, with
-the Worker handling `/api/*` and the SPA fallback for deep links like `/r/ABCD`.
+That's the whole deploy. Wrangler prints the live URL, something like:
 
-`GameRoom` is registered as a **SQLite-backed** Durable Object (`new_sqlite_classes`), so it
-runs on the Workers free plan.
+```
+https://mnbgold.<your-subdomain>.workers.dev
+```
+
+Open it on your phone and it is playable immediately. Every push of new code is just
+`npm run deploy` again.
+
+### Why this runs on the free plan
+
+`GameRoom` is registered as a **SQLite-backed** Durable Object:
+
+```toml
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["GameRoom"]
+```
+
+SQLite-backed Durable Objects are included on the Workers **free** plan. (The older
+KV-backed kind — declared with `new_classes` — is the one that requires a paid plan. If you
+ever switch that line, you change the billing requirement.)
+
+The free plan's daily request allowance is far more than a few friends playing need.
+WebSocket *messages* bill as requests, but a whole expedition is only a few hundred of them.
+
+### What `wrangler.toml` sets up
+
+| Piece | Purpose |
+| --- | --- |
+| `main = "worker/index.ts"` | routes `/api/*`, mints room codes, upgrades WebSockets |
+| `[assets] directory = "./dist"` | serves the built PWA |
+| `not_found_handling = "none"` | lets the Worker do the SPA fallback for `/r/ABCD` deep links |
+| `[[durable_objects.bindings]]` | binds `ROOMS` → the `GameRoom` class |
+
+One Durable Object instance per room code, addressed with `idFromName(code)` — so everyone
+typing the same four letters lands in the same object, wherever they are.
+
+### Checking it works
+
+```bash
+curl https://<your-url>/api/health          # {"ok":true}
+curl -X POST https://<your-url>/api/room    # {"code":"ABCD"}
+```
+
+If those two respond, hosting and joining will work.
+
+### Optional: a custom domain
+
+Add a route to `wrangler.toml` (the domain must be on your Cloudflare account):
+
+```toml
+routes = [{ pattern = "gold.example.com", custom_domain = true }]
+```
+
+Then `npm run deploy` again. Worth doing if you want a tidier name on the Home Screen —
+the `workers.dev` URL works fine otherwise, including for installing the PWA.
+
+### Rolling back
+
+```bash
+npx wrangler deployments list
+npx wrangler rollback [<version-id>]
+```
+
+Rooms are ephemeral — an idle room is swept after two hours — so a rollback mid-session only
+disrupts games actually in progress.
 
 ## Installing on iPhone
 
