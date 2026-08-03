@@ -6,6 +6,7 @@ import {
   allDecided,
   beginRound,
   buildRoundDeck,
+  canJoin,
   createRoom,
   decide,
   resolveDecisions,
@@ -457,6 +458,83 @@ test('treasure cards return to the deck at full value each expedition', () => {
   const rebuilt = buildRoundDeck(state, fixedRng);
   const seventeens = rebuilt.filter((c) => c.kind === 'treasure' && c.value === 17);
   assert.equal(seventeens.length, 1, 'the 17 is back, undiminished');
+});
+
+/* ------------------------------------------------------------------ */
+/* Seating                                                             */
+/* ------------------------------------------------------------------ */
+
+test('a latecomer may join a game already under way', () => {
+  const state = room(2);
+  startGame(state, fixedRng);
+  stack(state, [treasure(8)]);
+  revealCard(state);
+
+  assert.equal(canJoin(state).ok, true, 'the door is open mid-expedition');
+
+  addPlayer(state, { id: 'late', name: 'Late', token: 'tokL', avatar: 3 });
+  const late = state.players[2];
+
+  // They wait at camp rather than being dropped into a run already in progress.
+  assert.equal(late.inTemple, false);
+  assert.equal(late.hand, 0);
+  assert.equal(late.chest, 0);
+  assert.equal(late.isHost, false, 'joining never steals the host seat');
+
+  // And they take no share of treasure turned over before they arrived.
+  stack(state, [treasure(9)]);
+  revealCard(state);
+  assert.equal(late.hand, 0, 'no share of a card they were not there for');
+  assert.equal(state.players[0].hand, 4 + 4);
+});
+
+test('a latecomer cannot stall the decision window they are not part of', () => {
+  const state = room(2);
+  startGame(state, fixedRng);
+  stack(state, [treasure(4)]);
+  revealCard(state);
+  addPlayer(state, { id: 'late', name: 'Late', token: 'tokL', avatar: 3 });
+
+  state.phase = 'decision';
+  decide(state, 'p0', 'continue');
+  decide(state, 'p1', 'continue');
+  assert.equal(allDecided(state), true, 'the camped newcomer is not waited on');
+  assert.equal(decide(state, 'late', 'leave'), false, 'and cannot act from camp');
+});
+
+test('the next expedition deals the latecomer in with everybody else', () => {
+  const state = room(2);
+  startGame(state, fixedRng);
+  stack(state, [treasure(4)]);
+  revealCard(state);
+  addPlayer(state, { id: 'late', name: 'Late', token: 'tokL', avatar: 3 });
+
+  beginRound(state, fixedRng);
+
+  const late = state.players[2];
+  assert.equal(late.inTemple, true, 'in the temple from the fresh round');
+  stack(state, [treasure(9)]);
+  revealCard(state);
+  assert.equal(late.hand, 3, 'and taking a full share of it');
+});
+
+test('a full room is still closed', () => {
+  const state = room(10);
+  startGame(state, fixedRng);
+  const gate = canJoin(state);
+  assert.equal(gate.ok, false);
+  assert.match(gate.ok === false ? gate.reason : '', /full/);
+});
+
+test('two explorers may wear the same face', () => {
+  const state = createRoom('TEST', 0);
+  addPlayer(state, { id: 'p0', name: 'Ana', token: 'tok0', avatar: 4 });
+  addPlayer(state, { id: 'p1', name: 'Bo', token: 'tok1', avatar: 4 });
+
+  assert.equal(state.players[0].avatar, 4);
+  assert.equal(state.players[1].avatar, 4, 'the second pick is honoured, not reassigned');
+  // The name under the portrait is what tells them apart.
+  assert.notEqual(state.players[0].name, state.players[1].name);
 });
 
 /* ------------------------------------------------------------------ */

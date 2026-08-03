@@ -116,6 +116,12 @@ app replays that token and reclaims the same seat mid-expedition, gems and all. 
 reconnects on its own with exponential backoff, and whenever iOS hands the tab back after
 backgrounding.
 
+Joining late: a room takes new players at any point, not just from the lobby — the only hard
+limit is the ten seats. Somebody arriving mid-game waits at camp with an empty chest rather than
+being dropped into the expedition already running, and the next `beginRound` deals them in with
+everybody else. Two players may also pick the same explorer; the name under the portrait is what
+tells them apart.
+
 ---
 
 ## Running it

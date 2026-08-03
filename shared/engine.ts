@@ -198,9 +198,16 @@ export function removePlayer(state: RoomState, playerId: string): void {
   if (wasHost && state.players.length > 0) state.players[0].isHost = true;
 }
 
+/**
+ * A latecomer is always welcome; the only hard limit is the number of seats.
+ *
+ * Arriving mid-game does not drop them into the expedition already running —
+ * that would either hand them a temple somebody else has been de-risking or
+ * saddle them with a collapse they never chose to walk into. They wait at camp
+ * with an empty chest and `beginRound` deals them in with everybody else.
+ */
 export function canJoin(state: RoomState): { ok: true } | { ok: false; reason: string } {
   if (state.players.length >= MAX_PLAYERS) return { ok: false, reason: 'This expedition is full (10 explorers).' };
-  if (state.phase !== 'lobby') return { ok: false, reason: 'That expedition has already set off.' };
   return { ok: true };
 }
 

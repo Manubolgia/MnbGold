@@ -701,18 +701,13 @@ p {
   text-align: center;
 }
 
-.brand-art {
-  width: min(72vw, 260px);
-  animation: fade-up var(--t-slow) var(--ease-out) both;
-}
-
 .brand-title {
   font-size: clamp(34px, 11vw, 52px);
   font-weight: 900;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   line-height: 1;
-  animation: fade-up var(--t-slow) var(--ease-out) 60ms both;
+  animation: fade-up var(--t-slow) var(--ease-out) both;
 }
 
 .brand-sub {

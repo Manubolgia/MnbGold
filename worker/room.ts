@@ -284,7 +284,7 @@ export class GameRoom implements DurableObject {
       id: crypto.randomUUID(),
       name: name || `Explorer ${state.players.length + 1}`,
       token: crypto.randomUUID(),
-      avatar: freeAvatar(state, msg.avatar),
+      avatar: safeAvatar(msg.avatar),
     });
     session.playerId = player.id;
 
@@ -477,18 +477,17 @@ export class GameRoom implements DurableObject {
 }
 
 /**
- * Honour the player's chosen explorer, but never seat two identical ones —
- * telling them apart at a glance is half the game.
+ * Everybody gets the explorer they picked, duplicates included — players are
+ * told apart by the name under the portrait, and being made to play someone
+ * else's second choice is worse than sharing a face.
+ *
+ * This still pins the value to a real sprite: the index arrives from the client,
+ * so anything out of range, fractional or not a number at all is folded back
+ * into the art set rather than trusted.
  */
-function freeAvatar(state: RoomState, requested: unknown): number {
-  const taken = new Set(state.players.map((p) => p.avatar));
-  const wanted = Number.isFinite(requested) ? Math.abs(Math.trunc(requested as number)) % MAX_PLAYERS : 0;
-  if (!taken.has(wanted)) return wanted;
-  for (let i = 0; i < MAX_PLAYERS; i++) {
-    const candidate = (wanted + i) % MAX_PLAYERS;
-    if (!taken.has(candidate)) return candidate;
-  }
-  return wanted;
+function safeAvatar(requested: unknown): number {
+  if (!Number.isFinite(requested)) return 0;
+  return Math.abs(Math.trunc(requested as number)) % MAX_PLAYERS;
 }
 
 function sanitiseName(raw: unknown): string {

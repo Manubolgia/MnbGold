@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { TempleScene } from '../art/Brand.js';
 import { Avatar, AVATAR_COUNT } from '../art/Avatars.js';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../../shared/types.js';
 
@@ -38,8 +37,7 @@ export function Home({
   return (
     <div className="screen home">
       <div className="brand">
-        <TempleScene className="brand-art" />
-        <h1 className="brand-title">Incan Gold</h1>
+        <h1 className="brand-title">MNBG Gold</h1>
         <p className="brand-sub">
           {MIN_PLAYERS}–{MAX_PLAYERS} explorers · online
         </p>
