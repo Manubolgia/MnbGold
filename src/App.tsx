@@ -35,6 +35,8 @@ interface Pop {
   id: number;
   kind: PopKind;
   value: string | null;
+  /** Second line, for when the headline number needs its total spelling out. */
+  note?: string;
 }
 
 /*
@@ -62,9 +64,11 @@ function popFor(events: GameEvent[]): Pop | null {
     case 'hazard-strike':
       return { id, kind: 'skull', value: best.lost > 0 ? `−${best.lost}` : null };
     case 'leave':
-      return best.artifacts > 0
-        ? { id, kind: 'artifact', value: `+${best.artifacts}` }
-        : { id, kind: 'exit', value: best.each > 0 ? `+${best.each}` : null };
+      if (best.artifacts > 0) return { id, kind: 'artifact', value: `+${best.artifacts}` };
+      // A multiplied escape is the whole point of extra mode: show what the
+      // gamble paid, not the plain share of the path.
+      if (best.bonus > 0) return { id, kind: 'gem', value: `${best.multiplier}x`, note: `+${best.bonus}` };
+      return { id, kind: 'exit', value: best.each > 0 ? `+${best.each}` : null };
     case 'artifact-found':
       return { id, kind: 'artifact', value: null };
     case 'treasure-split':
@@ -155,8 +159,10 @@ export function App() {
       return;
     }
 
+    // Cashing out at a multiplier is as big a moment as a fat treasure card.
+    const paidOut = events.find((e) => e.t === 'leave' && e.bonus > 0);
     const treasure = events.find((e) => e.t === 'treasure-split');
-    if (treasure && treasure.t === 'treasure-split' && treasure.value >= 11) {
+    if (paidOut || (treasure && treasure.t === 'treasure-split' && treasure.value >= 11)) {
       setFlash({ id: nextId(), kind: 'gold' });
     }
   }, [pulse]);
@@ -272,6 +278,7 @@ export function App() {
             onStart={() => room.send({ t: 'start' })}
             onKick={(playerId) => room.send({ t: 'kick', playerId })}
             onTimer={(decisionSeconds) => room.send({ t: 'settings', settings: { decisionSeconds } })}
+            onExtraMode={(extraMode) => room.send({ t: 'settings', settings: { extraMode } })}
             onShare={shareInvite}
           />
         ) : (
@@ -294,6 +301,7 @@ export function App() {
         <div key={pop.id} className="pop" data-kind={pop.kind} aria-hidden="true">
           <PopArt size={54} />
           {pop.value ? <span className="pop-value">{pop.value}</span> : null}
+          {pop.note ? <span className="pop-note">{pop.note}</span> : null}
         </div>
       ) : null}
 

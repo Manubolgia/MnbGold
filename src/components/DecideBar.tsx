@@ -50,6 +50,12 @@ export function DecideBar({ state, youId, onDecide }: Props) {
   }
 
   const locked = you?.hasDecided ?? false;
+  const hand = you?.hand ?? 0;
+  // In extra mode the honest figure is the multiplied one — that is what the
+  // tent actually receives, so that is the number the button has to show.
+  const multiplier = state.readout?.multiplier ?? 1;
+  const takeaway = Math.round(hand * multiplier);
+  const boosted = takeaway > hand;
 
   return (
     <div className={`decide${locked ? ' is-locked' : ''}`}>
@@ -59,10 +65,11 @@ export function DecideBar({ state, youId, onDecide }: Props) {
       </button>
       {/* The number is the point of this one: it is what you walk away with. */}
       <button type="button" className="btn btn-accent" onClick={() => onDecide('leave')}>
-        <span className="tally">
+        <span className={`tally${boosted ? ' is-boosted' : ''}`}>
           <ExitIcon size={22} />
           <GemIcon size={16} />
-          {you?.hand ?? 0}
+          {takeaway}
+          {boosted ? <span className="tally-mult">{multiplier}x</span> : null}
         </span>
         Get out
       </button>

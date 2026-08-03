@@ -896,6 +896,88 @@ p {
   min-width: 0;
 }
 
+/* Extra mode switch. Everybody sees the tile; only the host gets the control,
+   so the setting is never a surprise to the table. */
+.extra-toggle {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--surface);
+  border: var(--line-w) solid var(--line);
+  color: var(--ink-dim);
+  transition:
+    border-color var(--t-base) var(--ease),
+    color var(--t-base) var(--ease);
+}
+
+.extra-toggle.is-on {
+  border-color: var(--main);
+  color: var(--main);
+}
+
+.extra-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.extra-name {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.extra-blurb {
+  font-size: 11px;
+  color: var(--ink-dim);
+}
+
+/* Square, hard-edged and travelling in one step — the house has no pill shapes
+   and nothing here slides. */
+.extra-switch {
+  flex: none;
+  width: 52px;
+  height: 28px;
+  padding: 3px;
+  background: var(--surface-2);
+  border: var(--line-w) solid var(--line);
+  cursor: pointer;
+}
+
+.extra-switch i {
+  display: block;
+  width: 20px;
+  height: 100%;
+  background: var(--ink-dim);
+  transition:
+    transform var(--t-base) var(--ease),
+    background-color var(--t-base) var(--ease);
+}
+
+.extra-switch[aria-checked='true'] {
+  border-color: var(--main);
+}
+
+.extra-switch[aria-checked='true'] i {
+  background: var(--main);
+  transform: translate3d(22px, 0, 0);
+}
+
+.extra-switch:active i {
+  opacity: 0.7;
+}
+
+.extra-state {
+  flex: none;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
 /* ================================================================ */
 /* Game table                                                        */
 /* ================================================================ */
@@ -1070,6 +1152,145 @@ p {
   font-size: 12px;
   font-weight: 800;
   color: var(--gem);
+}
+
+/* --- Risk meter (extra mode) -------------------------------------- */
+
+/*
+ * The odds, the multiplier and the take, in one fixed-height strip.
+ *
+ * `--risk-col` is the only thing the tiers change: every part of the meter reads
+ * from it, so the whole strip warms from the safe colour through to the danger
+ * colour as one object. Its height is fixed in every tier so the path above it
+ * never resizes when the run turns.
+ */
+.risk {
+  --risk-col: var(--secondary);
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+  padding: 7px 9px;
+  background: var(--surface);
+  border: var(--line-w) solid var(--risk-col);
+  animation: fade-up var(--t-base) var(--ease-out) both;
+  transition: border-color var(--t-slow) var(--ease);
+}
+
+/* Safe stays quiet and green; the ramp runs through gold to the accent, which is
+   the same colour the temple flashes when it finally kills you. */
+.risk[data-tier='uneasy'] {
+  --risk-col: var(--gold);
+}
+
+.risk[data-tier='risky'] {
+  --risk-col: var(--main);
+}
+
+.risk[data-tier='grave'],
+.risk[data-tier='lethal'] {
+  --risk-col: var(--accent);
+}
+
+/* Only the top tier moves — so when it does, it means it. */
+.risk[data-tier='lethal'] {
+  animation:
+    fade-up var(--t-base) var(--ease-out) both,
+    pulse-edge 1100ms var(--ease) infinite;
+}
+
+.risk-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--risk-col);
+  transition: color var(--t-slow) var(--ease);
+}
+
+.risk-tier {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.risk-odds {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-dim);
+}
+
+/* The prize. Punches on every change, so a rising multiplier is felt. */
+.risk-mult {
+  font-size: 20px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  color: var(--risk-col);
+  animation: tick-up 420ms var(--ease-out) both;
+}
+
+/* Five hard blocks, not a smooth fill: the run tightening is a step you catch
+   in the corner of your eye rather than a gradient you have to study. */
+.risk-bar {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 3px;
+  height: 9px;
+}
+
+.risk-bar i {
+  background: var(--surface-2);
+  outline: var(--line-w) solid var(--line);
+  outline-offset: -2px;
+  transition:
+    background-color var(--t-base) var(--ease),
+    outline-color var(--t-base) var(--ease);
+}
+
+.risk-bar i.is-lit {
+  background: var(--risk-col);
+  outline-color: var(--risk-col);
+}
+
+.risk-take {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.risk-take-label {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.risk-take-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 16px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: var(--gem);
+  animation: tick-up 420ms var(--ease-out) both;
+}
+
+/* The multiplier riding along on the "Get out" button. */
+.tally.is-boosted {
+  color: var(--on-accent);
+}
+
+.tally-mult {
+  margin-left: 2px;
+  padding: 1px 4px;
+  background: var(--on-accent);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 /* --- Decision --------------------------------------------------- */
@@ -1406,6 +1627,14 @@ p {
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
   text-shadow: 3px 3px 0 var(--shadow-col);
+}
+
+/* The total under a headline multiplier. */
+.pop-note {
+  font-size: 18px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 2px 2px 0 var(--shadow-col);
 }
 
 .flash {

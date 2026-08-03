@@ -1,7 +1,7 @@
 import type { PublicState } from '../../shared/types.js';
-import { MAX_PLAYERS, MIN_PLAYERS } from '../../shared/types.js';
+import { MAX_PLAYERS, MIN_PLAYERS, RISK_MULTIPLIER_MAX } from '../../shared/types.js';
 import { Avatar } from '../art/Avatars.js';
-import { ClockIcon, CloseIcon, CopyIcon } from '../art/Icons.js';
+import { ClockIcon, CloseIcon, CopyIcon, RiskIcon } from '../art/Icons.js';
 
 interface Props {
   state: PublicState;
@@ -9,12 +9,13 @@ interface Props {
   onStart: () => void;
   onKick: (playerId: string) => void;
   onTimer: (seconds: number) => void;
+  onExtraMode: (on: boolean) => void;
   onShare: () => void;
 }
 
 const TIMER_CHOICES = [0, 20, 30, 45];
 
-export function Lobby({ state, youId, onStart, onKick, onTimer, onShare }: Props) {
+export function Lobby({ state, youId, onStart, onKick, onTimer, onExtraMode, onShare }: Props) {
   const you = state.players.find((p) => p.id === youId);
   const isHost = you?.isHost ?? false;
   const enough = state.players.length >= MIN_PLAYERS;
@@ -84,6 +85,36 @@ export function Lobby({ state, youId, onStart, onKick, onTimer, onShare }: Props
           ))}
         </div>
       ) : null}
+
+      {/*
+       * Extra mode changes how everybody plays, so everybody sees its state —
+       * the host gets the switch, the rest get the same tile, locked.
+       */}
+      <div className={`extra-toggle${state.settings.extraMode ? ' is-on' : ''}`}>
+        <RiskIcon size={20} />
+        <div className="extra-copy">
+          <div className="extra-name">Extra mode</div>
+          <div className="extra-blurb">
+            {state.settings.extraMode
+              ? `See the odds before you choose — cash out at up to ${RISK_MULTIPLIER_MAX}x.`
+              : 'Play the printed rules, with no odds shown.'}
+          </div>
+        </div>
+        {isHost ? (
+          <button
+            type="button"
+            className="extra-switch"
+            role="switch"
+            aria-checked={state.settings.extraMode}
+            aria-label="Extra mode"
+            onClick={() => onExtraMode(!state.settings.extraMode)}
+          >
+            <i />
+          </button>
+        ) : (
+          <span className="extra-state">{state.settings.extraMode ? 'On' : 'Off'}</span>
+        )}
+      </div>
 
       <div className="spacer" />
 

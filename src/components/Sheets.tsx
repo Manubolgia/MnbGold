@@ -3,7 +3,14 @@ import { useEffect } from 'react';
 import { CloseIcon } from '../art/Icons.js';
 import { ArtifactCard, CardBack, HAZARD_NAME, HazardCard, TreasureCard } from '../art/Cards.js';
 import { SCHEMES, type Mode, type SchemeId } from '../lib/useTheme.js';
-import { HAZARD_TYPES, TREASURE_VALUES, HAZARD_COPIES, ARTIFACT_COUNT } from '../../shared/types.js';
+import {
+  HAZARD_TYPES,
+  TREASURE_VALUES,
+  HAZARD_COPIES,
+  ARTIFACT_COUNT,
+  RISK_MULTIPLIER_MIN,
+  RISK_MULTIPLIER_MAX,
+} from '../../shared/types.js';
 import type { PublicPlayer } from '../../shared/types.js';
 import { Scores } from './Scores.js';
 
@@ -165,6 +172,28 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
           </li>
           <li>Artifacts left on the path when an expedition ends are lost for the rest of the game.</li>
           <li>After five expeditions, the most gems wins.</li>
+        </ul>
+
+        <h3>Extra mode</h3>
+        <p>
+          An optional modifier the host switches on in the lobby. It changes nothing about how the temple works — only
+          what you are told, and what walking out is worth.
+        </p>
+        <ul>
+          <li>
+            Before every decision you see the <strong>exact</strong> chance that the next card ends the expedition: the
+            share of the remaining deck that is a second copy of a hazard already on the path. It is counted from the
+            real deck, not estimated.
+          </li>
+          <li>
+            The same number sets a payout multiplier, from {RISK_MULTIPLIER_MIN}x at no risk up to{' '}
+            <strong>{RISK_MULTIPLIER_MAX}x</strong> when the temple is about to come down. Gems you carry out are paid
+            at the multiplier standing when you chose to leave.
+          </li>
+          <li>
+            Artifacts are <em>not</em> multiplied — they always score their printed value.
+          </li>
+          <li>Get caught by the hazard pair and the multiplier is worth nothing. You still lose everything in hand.</li>
         </ul>
 
         <h3>The deck</h3>

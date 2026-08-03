@@ -10,12 +10,22 @@ import {
   decide,
   resolveDecisions,
   revealCard,
+  riskReadout,
   score,
   startGame,
+  toPublic,
   winners,
   type RoomState,
 } from '../shared/engine.js';
-import { HAZARD_TYPES, TREASURE_VALUES, type Card, type HazardType } from '../shared/types.js';
+import {
+  HAZARD_TYPES,
+  RISK_MULTIPLIER_MAX,
+  RISK_MULTIPLIER_MIN,
+  TREASURE_VALUES,
+  riskMultiplier,
+  type Card,
+  type HazardType,
+} from '../shared/types.js';
 
 /** Deterministic "shuffle" so deck order is exactly what each test stacks. */
 const fixedRng = () => 0;
@@ -447,4 +457,176 @@ test('treasure cards return to the deck at full value each expedition', () => {
   const rebuilt = buildRoundDeck(state, fixedRng);
   const seventeens = rebuilt.filter((c) => c.kind === 'treasure' && c.value === 17);
   assert.equal(seventeens.length, 1, 'the 17 is back, undiminished');
+});
+
+/* ------------------------------------------------------------------ */
+/* Extra mode: risk & multiplier                                        */
+/* ------------------------------------------------------------------ */
+
+test('with no hazard face-up, nothing in the deck can end the run', () => {
+  const state = room(2);
+  startGame(state, fixedRng);
+  stack(state, [treasure(4), treasure(6)]);
+  revealCard(state);
+
+  const r = riskReadout(state);
+  assert.equal(r.deadly, 0);
+  assert.equal(r.risk, 0);
+  assert.equal(r.multiplier, RISK_MULTIPLIER_MIN, 'no risk pays no bonus');
+});
+
+test('risk is exactly the share of the deck that is a matching second hazard', () => {
+  const state = room(2);
+  startGame(state, fixedRng);
+  // A deck of exactly 4: two snakes, a fire, a treasure. Reveal the snake, and
+  // the one remaining snake is the only card that can end the run.
+  stack(state, [hazard('snake', 'h-s1'), hazard('snake', 'h-s2'), hazard('fire', 'h-f1'), treasure(5)]);
+  revealCard(state);
+
+  const r = riskReadout(state);
+  assert.equal(r.deck, 3, 'three cards left');
+  assert.equal(r.deadly, 1, 'only the second snake is lethal');
+  assert.equal(r.risk, 1 / 3);
+});
+
+test('a second face-up hazard type puts more of the deck in play', () => {
+  const state = room(2);
+  startGame(state, fixedRng);
+  stack(state, [
+    hazard('snake', 'h-s1'),
+    hazard('fire', 'h-f1'),
+    hazard('snake', 'h-s2'),
+    hazard('fire', 'h-f2'),
+    treasure(5),
+    treasure(7),
+  ]);
+  revealCard(state);
+  revealCard(state);
+
+  const r = riskReadout(state);
+  assert.equal(r.deck, 4);
+  assert.equal(r.deadly, 2, 'the matching snake and the matching fire');
+  assert.equal(r.risk, 0.5);
+});
+
+test('a hazard removed from the game stops counting toward the risk', () => {
+  const state = room(2);
+  startGame(state, fixedRng);
+  // Burn a fire pair, which strikes one fire card out of the game for good.
+  stack(state, [hazard('fire'), hazard('fire')]);
+  revealCard(state);
+  revealCard(state);
+  assert.deepEqual(state.removedHazards, ['fire']);
+
+  // A real rebuilt deck, not a stacked fixture — the point is what survives in it.
+  beginRound(state, fixedRng);
+  assert.equal(state.deck.filter((c) => c.kind === 'hazard' && c.hazard === 'fire').length, 2);
+
+  // Draw one of the two remaining fires onto the path by hand, so the deck it
+  // leaves behind is the genuine rebuilt one.
+  const idx = state.deck.findIndex((c) => c.kind === 'hazard' && c.hazard === 'fire');
+  state.deck.splice(idx, 1);
+  state.path.push({ kind: 'hazard', id: 'h-fire-shown', hazard: 'fire' });
+
+  const r = riskReadout(state);
+  // Three fires in the box, one removed for good, one now face-up: one is left.
+  assert.equal(r.deadly, 1, 'only the last surviving fire can strike');
+  assert.equal(r.deck, state.deck.length);
+});
+
+test('the multiplier climbs with the risk and is bounded at both ends', () => {
+  assert.equal(riskMultiplier(0), RISK_MULTIPLIER_MIN);
+  assert.equal(riskMultiplier(1), RISK_MULTIPLIER_MAX, 'certain death still pays only the ceiling');
+  assert.equal(riskMultiplier(-1), RISK_MULTIPLIER_MIN, 'never pays below the floor');
+  assert.ok(riskMultiplier(0.1) > riskMultiplier(0.05), 'more risk pays more');
+  assert.ok(riskMultiplier(0.05) > RISK_MULTIPLIER_MIN);
+});
+
+test('extra mode multiplies the gems a leaver banks', () => {
+  const state = room(2);
+  state.settings.extraMode = true;
+  startGame(state, fixedRng);
+  // Reveal a snake, then a 20-gem treasure, leaving a deck that is one third
+  // lethal — the ceiling multiplier of 3x.
+  stack(state, [hazard('snake', 'h-s1'), treasure(20), hazard('snake', 'h-s2'), treasure(1)]);
+  revealCard(state);
+  revealCard(state);
+
+  assert.equal(riskReadout(state).multiplier, RISK_MULTIPLIER_MAX);
+  for (const p of state.players) assert.equal(p.hand, 10);
+
+  state.phase = 'decision';
+  decide(state, 'p0', 'leave');
+  decide(state, 'p1', 'continue');
+  const events = resolveDecisions(state);
+
+  assert.equal(state.players[0].chest, 30, '10 gems banked at 3x');
+  const left = events.find((e) => e.t === 'leave');
+  assert.equal(left?.t === 'leave' ? left.multiplier : 0, 3);
+  assert.equal(left?.t === 'leave' ? left.bonus : -1, 20, 'the multiplier added 20 on top');
+});
+
+test('with extra mode off the payout is untouched', () => {
+  const state = room(2);
+  startGame(state, fixedRng);
+  stack(state, [hazard('snake', 'h-s1'), treasure(20), hazard('snake', 'h-s2')]);
+  revealCard(state);
+  revealCard(state);
+
+  state.phase = 'decision';
+  decide(state, 'p0', 'leave');
+  decide(state, 'p1', 'continue');
+  const events = resolveDecisions(state);
+
+  assert.equal(state.players[0].chest, 10, 'exactly what they carried');
+  const left = events.find((e) => e.t === 'leave');
+  assert.equal(left?.t === 'leave' ? left.multiplier : 0, 1);
+  assert.equal(left?.t === 'leave' ? left.bonus : -1, 0);
+});
+
+test('the multiplier does not inflate artifact points', () => {
+  const state = room(2);
+  state.settings.extraMode = true;
+  startGame(state, fixedRng);
+  stack(state, [hazard('snake', 'h-s1'), artifact('a0'), hazard('snake', 'h-s2'), treasure(1)]);
+  revealCard(state);
+  revealCard(state);
+
+  state.phase = 'decision';
+  decide(state, 'p0', 'leave');
+  decide(state, 'p1', 'continue');
+  resolveDecisions(state);
+
+  assert.equal(state.players[0].artifacts, 1);
+  assert.equal(state.players[0].artifactPoints, 5, 'printed value, never multiplied');
+});
+
+test('the readout is published only during a live decision, and only in extra mode', () => {
+  const state = room(2);
+  startGame(state, fixedRng);
+  stack(state, [hazard('snake', 'h-s1'), hazard('snake', 'h-s2'), treasure(4)]);
+  revealCard(state);
+
+  assert.equal(toPublic(state, 0).readout, null, 'off by default');
+
+  state.settings.extraMode = true;
+  const during = toPublic(state, 0).readout;
+  assert.ok(during, 'shown while a card is on the table');
+  assert.equal(during.deadly, 1);
+
+  // Resolving into a fresh round leaves no next card to price.
+  state.phase = 'round-end';
+  assert.equal(toPublic(state, 0).readout, null, 'not once the round is over');
+});
+
+test('the published readout never leaks the deck order', () => {
+  const state = room(2);
+  state.settings.extraMode = true;
+  startGame(state, fixedRng);
+  stack(state, [hazard('snake', 'h-s1'), hazard('snake', 'h-s2'), treasure(9)]);
+  revealCard(state);
+
+  const published = JSON.stringify(toPublic(state, 0));
+  assert.ok(!published.includes('h-s2'), 'the lethal card is not named');
+  assert.ok(!published.includes('"deck":['), 'the deck itself is never serialised');
 });

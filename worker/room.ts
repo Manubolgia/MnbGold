@@ -15,6 +15,7 @@ import {
   canJoin,
   createRoom,
   decide,
+  defaultSettings,
   openDecisions,
   pushLog,
   removePlayer,
@@ -57,6 +58,8 @@ export class GameRoom implements DurableObject {
       const stored = await this.ctx.storage.get<RoomState>('state');
       if (stored) {
         this.state = stored;
+        // A room stored before a setting existed comes back without it.
+        this.state.settings = { ...defaultSettings, ...this.state.settings };
         // Nobody is connected across an eviction.
         for (const p of this.state.players) p.connected = false;
       }
@@ -205,6 +208,9 @@ export class GameRoom implements DurableObject {
         if (typeof msg.settings.decisionSeconds === 'number') {
           const s = Math.round(msg.settings.decisionSeconds);
           state.settings.decisionSeconds = Math.max(0, Math.min(120, s));
+        }
+        if (typeof msg.settings.extraMode === 'boolean') {
+          state.settings.extraMode = msg.settings.extraMode;
         }
         await this.broadcastState();
         return;

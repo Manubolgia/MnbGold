@@ -41,9 +41,19 @@ This is a 1:1 replica of the published rules. The engine lives in
 worth 5 gems each, the fourth and fifth 10 each. Artifacts left on the path when an expedition
 ends are lost for the rest of the game. Most gems after five expeditions wins.
 
-The only addition to the physical game is an optional **decision timer** (host setting, default
-30s). When it runs out, anyone who has not chosen walks out with their gems — the safe option,
-so an absent player is never punished beyond losing the upside.
+Two additions to the physical game, both host settings.
+
+An optional **decision timer** (default 30s). When it runs out, anyone who has not chosen walks
+out with their gems — the safe option, so an absent player is never punished beyond losing the
+upside.
+
+**Extra mode** (default off) shows the risk and pays for taking it. Before each decision every
+explorer sees the exact chance the next card ends the expedition — the share of the remaining
+deck that is a second copy of a hazard already face-up. That is computed from the real deck on
+the server, and only the resulting odds are published, so the deck order never leaks. The same
+number drives a payout multiplier from 1x up to **3x**, applied to the gems a leaver banks at
+the odds standing when they chose. Artifacts keep their printed value and are never multiplied,
+and a hazard pair still takes everything in hand — the multiplier only pays if you get out.
 
 ---
 

@@ -168,6 +168,23 @@ export function TrophyIcon(props: IconProps) {
   );
 }
 
+/**
+ * Extra mode's mark: a hazard triangle carrying a warning bar.
+ *
+ * Drawn as an outline with a solid bang rather than a filled plate with holes
+ * punched in it — this one has to sit on the surface, on a button and on the
+ * accent fill, so it cannot assume what colour is behind it.
+ */
+export function RiskIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M12 2 L23 21 H1 Z" strokeWidth={2.2} />
+      <rect x="10.8" y="9" width="2.4" height="5.5" fill="currentColor" stroke="none" />
+      <rect x="10.8" y="16.2" width="2.4" height="2.4" fill="currentColor" stroke="none" />
+    </Icon>
+  );
+}
+
 export function ClockIcon(props: IconProps) {
   return (
     <Icon {...props}>

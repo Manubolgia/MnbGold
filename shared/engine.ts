@@ -33,8 +33,11 @@ import {
   type LogEntry,
   type PathCard,
   type Phase,
+  riskMultiplier,
+  riskTier,
   type PublicPlayer,
   type PublicState,
+  type RiskReadout,
   type Settings,
 } from './types.js';
 
@@ -72,7 +75,33 @@ export interface RoomState {
 
 export type Rng = () => number;
 
-export const defaultSettings: Settings = { decisionSeconds: 30 };
+export const defaultSettings: Settings = { decisionSeconds: 30, extraMode: false };
+
+/* ------------------------------------------------------------------ */
+/* Risk (extra mode)                                                    */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The exact chance the next card ends the expedition.
+ *
+ * Not a heuristic: the deck is shuffled but its *contents* are known, and every
+ * card is equally likely to be on top. So the probability is simply the share of
+ * the remaining deck that is a second copy of a hazard already face-up — the
+ * only cards that can end the run. Treasure and artifacts are always safe, and a
+ * hazard type with no copy on the path yet is safe too.
+ *
+ * Computed server-side and only ever published as this one number, so extra mode
+ * never leaks the deck order it was derived from.
+ */
+export function riskReadout(state: RoomState): RiskReadout {
+  const facedUp = new Set(
+    state.path.filter((c): c is Extract<PathCard, { kind: 'hazard' }> => c.kind === 'hazard').map((c) => c.hazard),
+  );
+  const deadly = state.deck.filter((c) => c.kind === 'hazard' && facedUp.has(c.hazard)).length;
+  const deck = state.deck.length;
+  const risk = deck > 0 ? deadly / deck : 0;
+  return { risk, deadly, deck, multiplier: riskMultiplier(risk), tier: riskTier(risk).id };
+}
 
 export function createRoom(code: string, now: number): RoomState {
   return {
@@ -330,6 +359,10 @@ export function resolveDecisions(state: RoomState): GameEvent[] {
 
   const leaving = explorers.filter((p) => p.decision === 'leave');
 
+  // Extra mode pays at the odds the leavers actually faced when they chose —
+  // read before the path is swept, since sweeping does not touch the deck.
+  const multiplier = state.settings.extraMode ? riskReadout(state).multiplier : 1;
+
   if (leaving.length > 0) {
     const totalOnPath = state.path.reduce(
       (sum, c) => sum + (c.kind === 'treasure' ? c.remaining : 0),
@@ -363,10 +396,15 @@ export function resolveDecisions(state: RoomState): GameEvent[] {
       state.path = state.path.filter((c) => c.kind !== 'artifact');
     }
 
+    // The multiplier rewards the gems carried out of the temple; artifacts are
+    // scored at their printed value and are deliberately left out of it.
+    let bonus = 0;
     for (const p of leaving) {
       p.hand += each;
-      p.chest += p.hand;
-      p.leftWith = p.hand;
+      const paid = Math.round(p.hand * multiplier);
+      bonus += paid - p.hand;
+      p.chest += paid;
+      p.leftWith = paid;
       p.hand = 0;
       p.inTemple = false;
     }
@@ -377,6 +415,8 @@ export function resolveDecisions(state: RoomState): GameEvent[] {
       each,
       remainder,
       artifacts: artifactsTaken,
+      multiplier,
+      bonus,
     });
   }
 
@@ -460,6 +500,12 @@ export function toPublic(state: RoomState, now: number): PublicState {
     artifactsOnPath: state.path.filter((c) => c.kind === 'artifact').length,
     artifactsClaimed: state.artifactsClaimed,
     gemsOnPath: state.path.reduce((sum, c) => sum + (c.kind === 'treasure' ? c.remaining : 0), 0),
+    // Priced only while there is a next card to price, so the badge cannot
+    // linger over a round that has already resolved.
+    readout:
+      state.settings.extraMode && (state.phase === 'decision' || state.phase === 'reveal')
+        ? riskReadout(state)
+        : null,
     decisionDeadline: state.decisionDeadline,
     settings: state.settings,
     log: state.log.slice(-60),
