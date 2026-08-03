@@ -1,6 +1,7 @@
 import type { PublicState } from '../../shared/types.js';
 import { HazardCard } from '../art/Cards.js';
 import { DeckIcon, GemIcon, TrophyIcon } from '../art/Icons.js';
+import { RiskMeter } from './RiskMeter.js';
 
 /**
  * How close the expedition is to collapsing: every hazard type already face-up
@@ -41,6 +42,9 @@ export function StatusBar({ state, onScores }: { state: PublicState; onScores: (
         <GemIcon size={13} />
         {state.gemsOnPath}
       </span>
+
+      {/* Extra mode only, and only while there is a next card to price. */}
+      {state.readout ? <RiskMeter readout={state.readout} /> : null}
 
       <div className="threats" aria-label="Hazards that would end the expedition">
         {threats.map((h) => (

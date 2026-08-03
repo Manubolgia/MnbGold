@@ -1054,7 +1054,15 @@ p {
   align-items: center;
   gap: 4px;
   min-width: 0;
-  overflow: hidden;
+  /* The one shrinkable thing in the strip, so it takes the squeeze on a narrow
+     phone — and slides rather than clipping a face out of reach. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.threats::-webkit-scrollbar {
+  display: none;
 }
 
 .threat {
@@ -1149,127 +1157,80 @@ p {
   color: var(--gem);
 }
 
-/* --- Risk meter (extra mode) -------------------------------------- */
+/* --- Risk chip (extra mode) --------------------------------------- */
 
 /*
- * The odds, the multiplier and the take, in one fixed-height strip.
+ * The odds and the multiplier, as one more chip in the status strip — same
+ * height and same box as the deck and gem chips, so switching extra mode on
+ * moves nothing on the table below.
  *
- * `--risk-col` is the only thing the tiers change: every part of the meter reads
- * from it, so the whole strip warms from the safe colour through to the danger
- * colour as one object. Its height is fixed in every tier so the path above it
- * never resizes when the run turns.
+ * `--risk-col` is the only thing the tiers change: the border, the icon and the
+ * multiplier all read from it, so the chip warms from the safe colour through to
+ * the danger colour as one object without naming the tier.
  */
-.risk {
+.chip.is-risk {
   --risk-col: var(--secondary);
-  flex: none;
-  display: flex;
-  flex-direction: column;
   gap: 5px;
-  margin-bottom: 8px;
-  padding: 7px 9px;
-  background: var(--surface);
-  border: var(--line-w) solid var(--risk-col);
-  animation: fade-up var(--t-base) var(--ease-out) both;
-  transition: border-color var(--t-slow) var(--ease);
+  /* Two numbers and nothing to spare: clipping either one would make the chip
+     lie, so it keeps its width and `.threats` takes the squeeze by scrolling. */
+  flex: none;
+  padding-inline: 6px;
+  color: var(--risk-col);
+  border-color: var(--risk-col);
+  animation: fade-down var(--t-base) var(--ease-out) both;
+  transition:
+    color var(--t-slow) var(--ease),
+    border-color var(--t-slow) var(--ease);
 }
 
 /* Safe stays quiet and green; the ramp runs through gold to the accent, which is
    the same colour the temple flashes when it finally kills you. */
-.risk[data-tier='uneasy'] {
+.chip.is-risk[data-tier='uneasy'] {
   --risk-col: var(--gold);
 }
 
-.risk[data-tier='risky'] {
+.chip.is-risk[data-tier='risky'] {
   --risk-col: var(--main);
 }
 
-.risk[data-tier='grave'],
-.risk[data-tier='lethal'] {
+.chip.is-risk[data-tier='grave'],
+.chip.is-risk[data-tier='lethal'] {
   --risk-col: var(--accent);
 }
 
-/* Only the top tier moves — so when it does, it means it. */
-.risk[data-tier='lethal'] {
+/* Only the top tier moves — so when it does, it means it. A chip is far shorter
+   than the old strip, so it gets its own shallow pulse: `pulse-edge` insets 6px
+   and would flood a box this size. */
+.chip.is-risk[data-tier='lethal'] {
   animation:
-    fade-up var(--t-base) var(--ease-out) both,
-    pulse-edge 1100ms var(--ease) infinite;
+    fade-down var(--t-base) var(--ease-out) both,
+    pulse-chip 1100ms var(--ease) infinite;
 }
 
-.risk-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--risk-col);
-  transition: color var(--t-slow) var(--ease);
+@keyframes pulse-chip {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 0 var(--accent);
+  }
+  50% {
+    box-shadow: inset 0 0 0 2px var(--accent);
+  }
 }
 
-.risk-tier {
-  font-size: 11px;
+/* The chance of losing everything — the number the decision actually turns on. */
+.risk-pct {
+  font-size: 13px;
   font-weight: 900;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.risk-odds {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
 }
 
 /* The prize. Punches on every change, so a rising multiplier is felt. */
 .risk-mult {
-  font-size: 20px;
+  font-size: 13px;
   font-weight: 900;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
   color: var(--risk-col);
-  animation: tick-up 420ms var(--ease-out) both;
-}
-
-/* Five hard blocks, not a smooth fill: the run tightening is a step you catch
-   in the corner of your eye rather than a gradient you have to study. */
-.risk-bar {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 3px;
-  height: 9px;
-}
-
-.risk-bar i {
-  background: var(--surface-2);
-  outline: var(--line-w) solid var(--line);
-  outline-offset: -2px;
-  transition:
-    background-color var(--t-base) var(--ease),
-    outline-color var(--t-base) var(--ease);
-}
-
-.risk-bar i.is-lit {
-  background: var(--risk-col);
-  outline-color: var(--risk-col);
-}
-
-.risk-take {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 11px;
-}
-
-.risk-take-label {
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-dim);
-}
-
-.risk-take-value {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 16px;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  color: var(--gem);
   animation: tick-up 420ms var(--ease-out) both;
 }
 

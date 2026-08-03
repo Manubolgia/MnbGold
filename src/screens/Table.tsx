@@ -4,7 +4,6 @@ import { StatusBar } from '../components/Hud.js';
 import { Path } from '../components/Path.js';
 import { Explorers } from '../components/Explorers.js';
 import { DecideBar } from '../components/DecideBar.js';
-import { RiskMeter } from '../components/RiskMeter.js';
 import { Scores } from '../components/Scores.js';
 import { ExitIcon, SkullIcon, TentIcon, TrophyIcon } from '../art/Icons.js';
 
@@ -80,8 +79,6 @@ export function Table({ state, youId, struck, onDecide, onScores, onRematch, onL
         <StatusBar state={state} onScores={onScores} />
         <Path path={state.path} />
         <Explorers players={state.players} youId={youId} struck={struck} />
-        {/* Extra mode only, and only while there is a next card to price. */}
-        {state.readout ? <RiskMeter readout={state.readout} hand={you?.hand ?? 0} /> : null}
       </div>
 
       <DecideBar state={state} youId={youId} onDecide={onDecide} />
