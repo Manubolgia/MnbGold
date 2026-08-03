@@ -64,10 +64,22 @@ flashes when the temple turns on you. Tokens live in
 [`src/styles/theme.css`](src/styles/theme.css). The choice is stored and applied before first
 paint, so the app never flashes the wrong palette on load.
 
-**Motion** — every state change fades or slides; nothing pops. Screens cross-fade in a shared
-grid cell, the decision bar and the banner hold a constant height in every phase, and the timer
-is a scaled bar. No element ever shifts the layout underneath your thumb. All of it collapses to
-near-zero duration under `prefers-reduced-motion`.
+**Reading the table** — nothing on the table is a sentence. The expedition is a row of pips, the
+deck and the loose gems are icon and number, and the hazards that would now end the run are the
+card faces themselves, ringed in the danger colour. An explorer inside the temple is a solid tile
+with a lit gem count; one back at camp is drained, dashed and stamped with a tent. Each beat of
+the game gets one wordless read-out — an icon and at most a number. The standings live behind the
+trophy button rather than on the board.
+
+**Fitting the phone** — the document itself never scrolls: the shell is pinned, so a mobile
+browser's address bar cannot slide in and out under the app and an installed PWA behaves exactly
+like the tab. The table is three bands — status, path, explorers — and only the path flexes, with
+its cards sized off whatever height is left over.
+
+**Motion** — every state change fades or slides. Screens cross-fade in a shared grid cell, the
+decision bar holds a constant height in every phase, and the timer is a scaled bar. No element
+ever shifts the layout underneath your thumb. All of it collapses to near-zero duration under
+`prefers-reduced-motion`.
 
 Tension is sold with a full-screen accent flash and a screen shake on a hazard pair, a gold
 flash on a large treasure, a hard-edged vignette that tightens as hazard types stack up, and

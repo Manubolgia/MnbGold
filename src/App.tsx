@@ -1,19 +1,24 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import type { Decision, GameEvent } from '../shared/types.js';
 import { useRoom } from './lib/useRoom.js';
 import { useTheme } from './lib/useTheme.js';
 import { loadIdentity, saveIdentity, clearSession } from './lib/storage.js';
 import { ScreenFade } from './components/ScreenFade.js';
 import { TopBar } from './components/TopBar.js';
-import { RulesSheet, ThemeSheet } from './components/Sheets.js';
+import { RulesSheet, ScoresSheet, ThemeSheet } from './components/Sheets.js';
 import { Home } from './screens/Home.js';
 import { Lobby } from './screens/Lobby.js';
 import { Table } from './screens/Table.js';
 import { dangerLevel } from './components/Hud.js';
+import { ArtifactIcon, ExitIcon, GemIcon, SkullIcon } from './art/Icons.js';
 
 type FlashKind = 'danger' | 'gold' | 'artifact';
+type PopKind = 'gem' | 'skull' | 'artifact' | 'exit';
 
-/** The one event a frame is really "about", for the banner and the flash. */
+/** What the app is rooted at — '/' on the Worker, '/MnbGold/' on Pages. */
+const BASE = import.meta.env.BASE_URL || '/';
+
+/** The one event a frame is really "about", for the pop and the flash. */
 const EVENT_WEIGHT: Record<GameEvent['t'], number> = {
   'hazard-strike': 100,
   'game-over': 90,
@@ -26,16 +31,60 @@ const EVENT_WEIGHT: Record<GameEvent['t'], number> = {
   card: 0,
 };
 
-function pickHeadline(events: GameEvent[]): GameEvent | null {
+interface Pop {
+  id: number;
+  kind: PopKind;
+  value: string | null;
+}
+
+/*
+ * The pop and the flash are siblings under the app shell and are keyed so each
+ * new one restarts its animation, so their ids have to come from the same
+ * counter — two `Date.now()` calls on one frame collide.
+ */
+let effectId = 0;
+const nextId = () => ++effectId;
+
+/**
+ * The single wordless read-out for a frame: an icon and, at most, a number.
+ * Anything that needs a sentence to explain it is not shown at all — the card
+ * that landed and the tiles that changed are the explanation.
+ */
+function popFor(events: GameEvent[]): Pop | null {
   let best: GameEvent | null = null;
   for (const e of events) {
     if (!best || EVENT_WEIGHT[e.t] > EVENT_WEIGHT[best.t]) best = e;
   }
-  return best && EVENT_WEIGHT[best.t] > 0 ? best : null;
+  if (!best) return null;
+
+  const id = nextId();
+  switch (best.t) {
+    case 'hazard-strike':
+      return { id, kind: 'skull', value: best.lost > 0 ? `−${best.lost}` : null };
+    case 'leave':
+      return best.artifacts > 0
+        ? { id, kind: 'artifact', value: `+${best.artifacts}` }
+        : { id, kind: 'exit', value: best.each > 0 ? `+${best.each}` : null };
+    case 'artifact-found':
+      return { id, kind: 'artifact', value: null };
+    case 'treasure-split':
+      return best.each > 0 ? { id, kind: 'gem', value: `+${best.each}` } : null;
+    default:
+      return null;
+  }
 }
 
+const POP_ART: Record<PopKind, (props: { size?: number }) => ReactElement> = {
+  gem: GemIcon,
+  skull: SkullIcon,
+  artifact: ArtifactIcon,
+  exit: ExitIcon,
+};
+
 function deepLinkCode(): string {
-  const fromPath = location.pathname.match(/^\/r\/([A-Za-z0-9]{4})\/?$/);
+  // Matches /r/CODE wherever the app is rooted, so a Pages deploy under a
+  // sub-path shares links that still work.
+  const fromPath = location.pathname.match(/\/r\/([A-Za-z0-9]{4})\/?$/);
   if (fromPath) return fromPath[1].toUpperCase();
   const fromQuery = new URLSearchParams(location.search).get('r');
   return fromQuery ? fromQuery.toUpperCase().slice(0, 4) : '';
@@ -48,12 +97,12 @@ export function App() {
   const identity = useRef(loadIdentity());
   const [name, setName] = useState(identity.current.name);
   const [avatar, setAvatar] = useState(identity.current.avatar);
-  const [sheet, setSheet] = useState<'theme' | 'rules' | null>(null);
+  const [sheet, setSheet] = useState<'theme' | 'rules' | 'scores' | null>(null);
   const [toasts, setToasts] = useState<{ id: number; text: string }[]>([]);
   const [flash, setFlash] = useState<{ id: number; kind: FlashKind } | null>(null);
   const [shaking, setShaking] = useState(false);
   const [struck, setStruck] = useState<string[]>([]);
-  const [lastEvent, setLastEvent] = useState<GameEvent | null>(null);
+  const [pop, setPop] = useState<Pop | null>(null);
   const [prefill] = useState(deepLinkCode);
 
   // Reopening the app (or reloading mid-expedition) walks straight back into
@@ -83,12 +132,12 @@ export function App() {
     if (pulse.length === 0) return;
     const events = pulse.map((e) => e.event);
 
-    const head = pickHeadline(events);
-    if (head) setLastEvent(head);
+    const next = popFor(events);
+    if (next) setPop(next);
 
     const strike = events.find((e) => e.t === 'hazard-strike');
     if (strike && strike.t === 'hazard-strike') {
-      setFlash({ id: Date.now(), kind: 'danger' });
+      setFlash({ id: nextId(), kind: 'danger' });
       setShaking(true);
       setStruck(strike.victims);
       const stopShake = setTimeout(() => setShaking(false), 640);
@@ -102,27 +151,33 @@ export function App() {
     const artifact = events.find((e) => e.t === 'artifact-found');
     const soloGrab = events.find((e) => e.t === 'leave' && e.artifacts > 0);
     if (artifact || soloGrab) {
-      setFlash({ id: Date.now(), kind: 'artifact' });
+      setFlash({ id: nextId(), kind: 'artifact' });
       return;
     }
 
     const treasure = events.find((e) => e.t === 'treasure-split');
     if (treasure && treasure.t === 'treasure-split' && treasure.value >= 11) {
-      setFlash({ id: Date.now(), kind: 'gold' });
+      setFlash({ id: nextId(), kind: 'gold' });
     }
   }, [pulse]);
 
-  // Clear the flash once its animation has played out.
+  // Clear the one-shots once their animations have played out.
   useEffect(() => {
     if (!flash) return;
     const id = setTimeout(() => setFlash(null), 760);
     return () => clearTimeout(id);
   }, [flash]);
 
-  // A fresh expedition should not inherit the previous one's headline.
+  useEffect(() => {
+    if (!pop) return;
+    const id = setTimeout(() => setPop(null), 1400);
+    return () => clearTimeout(id);
+  }, [pop]);
+
+  // A fresh expedition should not inherit the previous one's pop.
   const phase = room.state?.phase;
   useEffect(() => {
-    if (phase === 'lobby') setLastEvent(null);
+    if (phase === 'lobby') setPop(null);
   }, [phase]);
 
   /* ---- Actions ---- */
@@ -130,7 +185,7 @@ export function App() {
   const shareInvite = useCallback(async () => {
     const code = room.state?.code;
     if (!code) return;
-    const url = `${location.origin}/r/${code}`;
+    const url = `${location.origin}${BASE}r/${code}`;
     const text = `Join my Incan Gold expedition — code ${code}`;
     try {
       if (navigator.share) {
@@ -159,8 +214,11 @@ export function App() {
 
   const leave = useCallback(() => {
     room.leave();
-    setLastEvent(null);
-    history.replaceState(null, '', '/');
+    setPop(null);
+    setSheet(null);
+    // Back to the app's own root, never the origin root: stepping outside the
+    // manifest scope is what drops an installed PWA into a browser tab.
+    history.replaceState(null, '', BASE);
   }, [room]);
 
   /* ---- Which screen ---- */
@@ -173,6 +231,7 @@ export function App() {
 
   const busy = room.conn === 'connecting';
   const dread = room.state && view === 'table' ? dangerLevel(room.state) : 0;
+  const PopArt = pop ? POP_ART[pop.kind] : null;
 
   return (
     <div className={`app${shaking ? ' is-shaking' : ''}`}>
@@ -219,9 +278,9 @@ export function App() {
           <Table
             state={room.state}
             youId={room.youId}
-            lastEvent={lastEvent}
             struck={struck}
             onDecide={decide}
+            onScores={() => setSheet('scores')}
             onRematch={() => room.send({ t: 'rematch' })}
             onLeave={leave}
           />
@@ -230,6 +289,13 @@ export function App() {
 
       {/* Hard-edged vignette that tightens as hazards stack up. */}
       <div className="dread" data-level={dread} aria-hidden="true" />
+
+      {pop && PopArt ? (
+        <div key={pop.id} className="pop" data-kind={pop.kind} aria-hidden="true">
+          <PopArt size={54} />
+          {pop.value ? <span className="pop-value">{pop.value}</span> : null}
+        </div>
+      ) : null}
 
       {flash ? <div key={flash.id} className="flash" data-kind={flash.kind} aria-hidden="true" /> : null}
 
@@ -243,6 +309,9 @@ export function App() {
         />
       ) : null}
       {sheet === 'rules' ? <RulesSheet onClose={() => setSheet(null)} /> : null}
+      {sheet === 'scores' && room.state ? (
+        <ScoresSheet players={room.state.players} youId={room.youId} onClose={() => setSheet(null)} />
+      ) : null}
 
       <div className="toast-wrap">
         {toasts.map((t) => (
@@ -253,7 +322,7 @@ export function App() {
       </div>
 
       {room.conn === 'reconnecting' || room.conn === 'offline' ? (
-        <div className="toast-wrap" style={{ bottom: 'auto', top: 'calc(64px + var(--safe-top))' }}>
+        <div className="toast-wrap is-top">
           <div className="toast">
             {room.conn === 'offline' ? 'Offline — still trying to reconnect…' : 'Reconnecting to the temple…'}
           </div>

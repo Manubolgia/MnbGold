@@ -9,7 +9,7 @@
  * Paths are resolved against the worker's own scope, which is '/' on the Worker
  * deploy and '/MnbGold/' on GitHub Pages.
  */
-const VERSION = 'mnbgold-v2';
+const VERSION = 'mnbgold-v3';
 const BASE = new URL('./', self.location).pathname;
 const SHELL = ['', 'index.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg'].map(
   (p) => `${BASE}${p}`,

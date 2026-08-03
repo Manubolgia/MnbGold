@@ -29,6 +29,16 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Tells the browser to draw its own furniture — scrollbars, form controls, the
+   overscroll gutter — in the mode the app is actually painted in. */
+:root[data-mode='dark'] {
+  color-scheme: dark;
+}
+
+:root[data-mode='light'] {
+  color-scheme: light;
+}
+
 /* ---------------------------------------------------------------- */
 /* Scheme: Temple — gold, jade, crimson                              */
 /* ---------------------------------------------------------------- */

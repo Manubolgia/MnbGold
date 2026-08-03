@@ -1,31 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
 import type { PublicState } from '../../shared/types.js';
-
-/** Adds a one-shot class whenever the value changes, to nudge the number. */
-function useTick(value: number | string): string {
-  const [ticking, setTicking] = useState(false);
-  const prev = useRef(value);
-
-  useEffect(() => {
-    if (prev.current === value) return;
-    prev.current = value;
-    setTicking(true);
-    const id = setTimeout(() => setTicking(false), 440);
-    return () => clearTimeout(id);
-  }, [value]);
-
-  return ticking ? 'hud-value is-ticking' : 'hud-value';
-}
-
-function Cell({ label, value, hot }: { label: string; value: string | number; hot?: boolean }) {
-  const cls = useTick(value);
-  return (
-    <div className={`hud-cell${hot ? ' is-hot' : ''}`}>
-      <span className="hud-label">{label}</span>
-      <span className={cls}>{value}</span>
-    </div>
-  );
-}
+import { HazardCard } from '../art/Cards.js';
+import { DeckIcon, GemIcon, TrophyIcon } from '../art/Icons.js';
 
 /**
  * How close the expedition is to collapsing: every hazard type already face-up
@@ -38,14 +13,48 @@ export function dangerLevel(state: PublicState): number {
   return 0;
 }
 
-export function Hud({ state }: { state: PublicState }) {
-  const distinct = new Set(state.hazardsOnPath).size;
+/**
+ * One glanceable strip instead of a grid of labelled numbers.
+ *
+ * Nothing here is a sentence: the expedition is a row of pips, the deck and the
+ * loose gems are icon + number, and the hazards that would now end the run are
+ * the actual card faces, ringed in the danger colour. Seeing a face here twice
+ * — once on the strip, once on the path — is the whole warning.
+ */
+export function StatusBar({ state, onScores }: { state: PublicState; onScores: () => void }) {
+  const threats = [...new Set(state.hazardsOnPath)];
+
   return (
-    <div className="hud">
-      <Cell label="Expedition" value={`${state.round}/${state.totalRounds}`} />
-      <Cell label="Deck" value={state.deckCount} />
-      <Cell label="On path" value={state.gemsOnPath} />
-      <Cell label="Threats" value={distinct} hot={distinct >= 3} />
+    <div className="status">
+      <div className="pips" aria-label={`Expedition ${state.round} of ${state.totalRounds}`}>
+        {Array.from({ length: state.totalRounds }, (_, i) => (
+          <i key={i} className={i < state.round ? 'is-on' : ''} />
+        ))}
+      </div>
+
+      <span className="chip" title="Cards left in the deck">
+        <DeckIcon size={13} />
+        {state.deckCount}
+      </span>
+
+      <span className="chip is-gem" title="Gems lying on the path">
+        <GemIcon size={13} />
+        {state.gemsOnPath}
+      </span>
+
+      <div className="threats" aria-label="Hazards that would end the expedition">
+        {threats.map((h) => (
+          <span key={h} className="threat">
+            <HazardCard hazard={h} />
+          </span>
+        ))}
+      </div>
+
+      <span className="spacer" />
+
+      <button type="button" className="icon-btn is-small" onClick={onScores} aria-label="Scores" title="Scores">
+        <TrophyIcon size={16} />
+      </button>
     </div>
   );
 }

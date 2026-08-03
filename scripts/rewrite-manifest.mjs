@@ -1,32 +1,36 @@
 /**
- * Rewrites dist/manifest.webmanifest for a non-root base path.
+ * Checks dist/manifest.webmanifest still resolves against wherever it is served.
  *
- * Vite rewrites asset URLs it finds in HTML and JS, but the manifest is copied
- * verbatim out of public/, so its start_url, scope and icon paths still point at
- * the origin root. GitHub Pages serves the board from /<repo>/, which breaks
- * installing the PWA unless those are prefixed too.
+ * The manifest is written with relative URLs ("./", "./icons/…"), which the
+ * browser resolves against the manifest's own address — so the same file works
+ * at the origin root (the Worker) and under /<repo>/ (GitHub Pages) with nothing
+ * to rewrite. That matters more than it sounds: an absolute "/" scope on a Pages
+ * deploy puts every in-app URL outside the installed app's scope, and the PWA
+ * drops into a browser tab with an address bar the moment it navigates.
  *
- * No-op when BASE_PATH is unset or '/', which is the Worker deploy.
+ * This script now only guards that invariant, so a hand-edit back to absolute
+ * paths fails the build instead of shipping a PWA that breaks out of itself.
  */
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-const base = process.env.BASE_PATH ?? '/';
-if (base === '/') {
-  console.log('manifest: root base, nothing to rewrite');
-  process.exit(0);
-}
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const file = resolve(root, 'dist/manifest.webmanifest');
 
 const manifest = JSON.parse(await readFile(file, 'utf8'));
-const withBase = (p) => `${base.replace(/\/$/, '')}${p}`;
 
-manifest.start_url = base;
-manifest.scope = base;
-manifest.icons = manifest.icons.map((icon) => ({ ...icon, src: withBase(icon.src) }));
+const absolute = [
+  ['start_url', manifest.start_url],
+  ['scope', manifest.scope],
+  ['id', manifest.id],
+  ...(manifest.icons ?? []).map((icon, i) => [`icons[${i}].src`, icon.src]),
+].filter(([, value]) => typeof value === 'string' && value.startsWith('/'));
 
-await writeFile(file, `${JSON.stringify(manifest, null, 2)}\n`);
-console.log(`manifest: rewritten for ${base}`);
+if (absolute.length > 0) {
+  console.error('manifest: these must be relative so the app installs under any base path:');
+  for (const [key, value] of absolute) console.error(`  ${key} = ${value}`);
+  process.exit(1);
+}
+
+console.log(`manifest: ok — relative throughout (base ${process.env.BASE_PATH ?? '/'})`);

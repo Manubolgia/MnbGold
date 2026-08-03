@@ -7,7 +7,7 @@ import type { SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
-function Icon({ size = 24, children, ...rest }: IconProps) {
+function Icon({ size = 24, className, children, ...rest }: IconProps) {
   return (
     <svg
       viewBox="0 0 24 24"
@@ -20,6 +20,9 @@ function Icon({ size = 24, children, ...rest }: IconProps) {
       strokeLinejoin="miter"
       aria-hidden="true"
       focusable="false"
+      /* `glyph` pins the drawn size: an icon is the label, so it must never be
+         squeezed by the flex box it sits in. */
+      className={className ? `glyph ${className}` : 'glyph'}
       {...rest}
     >
       {children}
@@ -152,6 +155,15 @@ export function TentIcon(props: IconProps) {
     <Icon {...props}>
       <path d="M12 3 L22 21 H2 Z" fill="currentColor" stroke="none" />
       <path d="M12 11 L17 21 H7 Z" fill="var(--surface)" stroke="none" />
+    </Icon>
+  );
+}
+
+export function TrophyIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 3 H19 V9 L15 14 H9 L5 9 Z" fill="currentColor" stroke="none" />
+      <path d="M11 14 H13 V18 H17 V21 H7 V18 H11 Z" fill="currentColor" stroke="none" />
     </Icon>
   );
 }

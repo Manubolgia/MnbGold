@@ -4,6 +4,8 @@ import { CloseIcon } from '../art/Icons.js';
 import { ArtifactCard, CardBack, HAZARD_NAME, HazardCard, TreasureCard } from '../art/Cards.js';
 import { SCHEMES, type Mode, type SchemeId } from '../lib/useTheme.js';
 import { HAZARD_TYPES, TREASURE_VALUES, HAZARD_COPIES, ARTIFACT_COUNT } from '../../shared/types.js';
+import type { PublicPlayer } from '../../shared/types.js';
+import { Scores } from './Scores.js';
 
 function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   useEffect(() => {
@@ -93,6 +95,25 @@ export function ThemeSheet({ mode, scheme, onMode, onScheme, onClose }: ThemeShe
           </p>
         </div>
       </div>
+    </Sheet>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
+/** The standings, on demand — so the table itself never has to carry them. */
+export function ScoresSheet({
+  players,
+  youId,
+  onClose,
+}: {
+  players: PublicPlayer[];
+  youId: string | null;
+  onClose: () => void;
+}) {
+  return (
+    <Sheet title="Scores" onClose={onClose}>
+      <Scores players={players} youId={youId} />
     </Sheet>
   );
 }

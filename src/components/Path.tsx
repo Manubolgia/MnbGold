@@ -3,7 +3,11 @@ import type { PathCard } from '../../shared/types.js';
 import { CardArt } from '../art/Cards.js';
 import { GemIcon } from '../art/Icons.js';
 
-/** The face-up trail of cards. Scrolls itself to the newest card as it lands. */
+/**
+ * The face-up trail of cards, and the only part of the table that flexes: the
+ * cards are sized off the height left over, so the board fits the phone instead
+ * of the phone scrolling to fit the board. Scrolls itself to the newest card.
+ */
 export function Path({ path }: { path: PathCard[] }) {
   const scroller = useRef<HTMLDivElement>(null);
   const count = path.length;
@@ -20,29 +24,21 @@ export function Path({ path }: { path: PathCard[] }) {
 
   return (
     <div className="path-wrap">
-      {count === 0 ? (
-        <p className="path-empty">The path is clear… for now</p>
-      ) : (
-        <div className="path" ref={scroller}>
-          {path.map((card, i) => (
-            <div
-              key={card.id}
-              className={`path-card ${i === count - 1 ? 'is-newest' : 'is-past'}`}
-              style={{ animationDelay: '0ms' }}
-            >
-              <CardArt card={card} />
-              <div className="card-gems">
-                {card.kind === 'treasure' && card.remaining > 0 ? (
-                  <>
-                    <GemIcon size={12} />
-                    {card.remaining}
-                  </>
-                ) : null}
-              </div>
+      <div className="path" ref={scroller}>
+        {path.map((card, i) => (
+          <div key={card.id} className={`path-card ${i === count - 1 ? 'is-newest' : 'is-past'}`}>
+            <CardArt card={card} />
+            <div className="card-gems">
+              {card.kind === 'treasure' && card.remaining > 0 ? (
+                <>
+                  <GemIcon size={11} />
+                  {card.remaining}
+                </>
+              ) : null}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

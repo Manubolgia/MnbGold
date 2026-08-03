@@ -1,5 +1,5 @@
 import type { Decision, PublicState } from '../../shared/types.js';
-import { ExitIcon, OnwardIcon } from '../art/Icons.js';
+import { CheckIcon, ExitIcon, GemIcon, OnwardIcon, TentIcon } from '../art/Icons.js';
 
 interface Props {
   state: PublicState;
@@ -8,51 +8,71 @@ interface Props {
 }
 
 /**
- * The commit bar. It is always mounted and always the same height, so the table
- * above it never jumps between phases — only its contents cross-fade.
+ * One pip per explorer still inside, filled once they have locked in — and your
+ * own pip is outlined, so you can see your own state too. It says "three of five
+ * have chosen" without a sentence, and it is the same row in every phase, so the
+ * bar never changes height.
+ */
+function Pips({ state, youId }: { state: PublicState; youId: string | null }) {
+  const inside = state.players.filter((p) => p.inTemple);
+  const ready = inside.filter((p) => p.hasDecided).length;
+  return (
+    <div className="pips is-wait" aria-label={`${ready} of ${inside.length} explorers ready`}>
+      {inside.map((p) => (
+        <i key={p.id} className={`${p.hasDecided ? 'is-on' : ''}${p.id === youId ? ' is-you' : ''}`} />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * The commit bar. Always mounted and always the same height, so the table above
+ * it never jumps between phases — only its contents cross-fade.
+ *
+ * Which way you went stays secret until everybody reveals, so a locked-in bar
+ * only says *that* you chose: both buttons drain and a tick lights up. Tapping
+ * again still changes your mind.
  */
 export function DecideBar({ state, youId, onDecide }: Props) {
   const you = state.players.find((p) => p.id === youId) ?? null;
   const inTemple = you?.inTemple ?? false;
   const open = state.phase === 'decision' && inTemple;
 
-  const waiting = state.players.filter((p) => p.inTemple && !p.hasDecided).length;
-
   if (!open) {
-    let message = 'Watching from the campfire';
-    if (state.phase === 'decision') {
-      message = `Waiting on ${waiting} ${waiting === 1 ? 'explorer' : 'explorers'}…`;
-    } else if (state.phase === 'round-intro') {
-      message = 'Everyone walks in…';
-    } else if (state.phase === 'round-end') {
-      message = 'Breaking camp…';
-    } else if (inTemple) {
-      message = 'Hold your nerve…';
-    }
     return (
       <div className="decide is-idle">
-        <div className="decide-locked">{message}</div>
+        <div className="decide-idle">
+          {inTemple ? <GemIcon size={24} /> : <TentIcon size={24} />}
+          <Pips state={state} youId={youId} />
+        </div>
       </div>
     );
   }
 
+  const locked = you?.hasDecided ?? false;
+
   return (
-    <div className="decide">
+    <div className={`decide${locked ? ' is-locked' : ''}`}>
       <button type="button" className="btn btn-secondary" onClick={() => onDecide('continue')}>
-        <OnwardIcon size={22} />
+        <OnwardIcon size={26} />
         Press on
-        <span className="sub">Deeper into the dark</span>
       </button>
+      {/* The number is the point of this one: it is what you walk away with. */}
       <button type="button" className="btn btn-accent" onClick={() => onDecide('leave')}>
-        <ExitIcon size={22} />
+        <span className="tally">
+          <ExitIcon size={22} />
+          <GemIcon size={16} />
+          {you?.hand ?? 0}
+        </span>
         Get out
-        <span className="sub">Bank {you?.hand ?? 0} gems</span>
       </button>
-      {/* Always rendered so locking in cannot resize the bar. */}
-      <div className="decide-note">
-        {you?.hasDecided
-          ? `Locked in — waiting on ${waiting} ${waiting === 1 ? 'explorer' : 'explorers'}. Tap again to change.`
-          : 'Everyone reveals at the same time.'}
+      <div className="decide-foot">
+        {locked ? (
+          <span className="locked-tick" aria-label="Locked in">
+            <CheckIcon size={14} />
+          </span>
+        ) : null}
+        <Pips state={state} youId={youId} />
       </div>
     </div>
   );
