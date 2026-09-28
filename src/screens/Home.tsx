@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Avatar, AVATAR_COUNT } from '../art/Avatars.js';
 import { MAX_PLAYERS, MIN_PLAYERS } from '../../shared/types.js';
+import { backToLibrary, inLibrary } from '../lib/library.js';
 
 interface Props {
   name: string;
@@ -127,10 +128,16 @@ export function Home({
         </button>
       </div>
 
-      <p className="hint">
-        Add this to your Home Screen from the Share menu to play full-screen. Your seat is remembered, so you can drop
-        out and walk straight back in.
-      </p>
+      {inLibrary ? (
+        <button type="button" className="btn btn-ghost btn-sm btn-block" onClick={backToLibrary}>
+          Back to the library
+        </button>
+      ) : (
+        <p className="hint">
+          Add this to your Home Screen from the Share menu to play full-screen. Your seat is remembered, so you can
+          drop out and walk straight back in.
+        </p>
+      )}
     </div>
   );
 }
