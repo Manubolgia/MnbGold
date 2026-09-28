@@ -25,8 +25,8 @@
   --shadow-press: 2px 2px 0 var(--shadow-col);
 
   --gutter: 16px;
-  --safe-top: env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: var(--mnbg-safe-top, env(safe-area-inset-top, 0px));
+  --safe-bottom: var(--mnbg-safe-bottom, env(safe-area-inset-bottom, 0px));
 }
 
 /* Tells the browser to draw its own furniture — scrollbars, form controls, the
